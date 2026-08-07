@@ -1668,6 +1668,22 @@
       Call
     </a>
   </nav>
+
+  <script>
+    // Auto-dial when arriving with ?call=1 (LinkedIn custom button, email signature).
+    // Chrome and Safari treat arrival from a clicked https link as a user gesture and
+    // allow a tel: handoff within ~1s. Desktop and any browser that blocks it just
+    // gets the normal page, so the Call buttons stay as the fallback.
+    // Plain /live-demos with no parameter behaves exactly as before.
+    (function () {
+      if (!/[?&]call=1(&|$)/.test(window.location.search)) return;
+      var isTouch = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+      if (!isTouch) return;
+      setTimeout(function () {
+        window.location.href = 'tel:+12166161364';
+      }, 400);
+    })();
+  </script>
 </body>
 </html>
 
