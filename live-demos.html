@@ -1749,9 +1749,22 @@
     var source = (new URLSearchParams(window.location.search).get('source') || 'direct')
                    .replace(/[^a-z0-9_-]/gi, '').slice(0, 40);
 
-    /* ---------------- MOBILE: tap to dial, nothing automatic --------------- */
+    /* ---------------- MOBILE: auto-dial on ?call=1 -------------------------
+       Wayne tested this on a real phone and it fires. Deep Research #306 called
+       auto-dial an anti-pattern on the theory that browsers block URI navigation
+       without a synchronous gesture — but arriving from a clicked https link
+       counts as one in Safari and Chrome, and observed behavior beats theory.
+       If a browser ever does block it, the visible Call My AI button is right
+       there and nothing is lost.
+       Plain /live-demos with no ?call=1 never auto-dials. That stays a browsing
+       page, so only links we deliberately tag are one-tap-to-live.          */
     if (isTouch) {
-      if (hint) hint.textContent = 'Tap to call. It answers on the first ring.';
+      if (hint) hint.textContent = 'Connecting you now — or tap Call My AI.';
+      if (/[?&]call=1(&|$)/.test(window.location.search)) {
+        setTimeout(function () { window.location.href = 'tel:' + PHONE; }, 400);
+      } else if (hint) {
+        hint.textContent = 'Tap to call. It answers on the first ring.';
+      }
       return;
     }
 
