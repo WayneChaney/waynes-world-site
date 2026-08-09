@@ -74,7 +74,7 @@
     <a href="tel:+12166161364" class="num">(216) 616-1364</a>
 
     <p class="note" id="note"></p>
-    <a href="/live-demos" class="back">See what else I build</a>
+    <a href="/" class="back">See what else I build</a>
   </main>
 
 <script>
@@ -108,6 +108,45 @@
 
   if (note) note.textContent = 'Connecting… if it does not start, tap Call now.';
   setTimeout(function () { window.location.href = 'tel:' + PHONE; }, 350);
+
+  /* ------------------------------------------------------------------------
+     Nobody should ever be stranded on this page. Two ways they end up back
+     here, and both should land on the site:
+
+       1. They hit Cancel on the OS dial prompt. The page never lost focus,
+          so we never see a visibilitychange -- we detect it by still being
+          visible after the dialer should have taken over.
+       2. They took the call and hung up. The page WAS hidden, then comes
+          back. That is the good ending, and per the original intent the
+          caller should finish the call already standing on Wayne's site.
+
+     The delay matters. Redirecting too fast would yank a slow phone away
+     mid-handoff, so we only act once the dialer has clearly had its chance.
+     Any tap on the page cancels the redirect -- if they are reading, leave
+     them alone.
+     ---------------------------------------------------------------------- */
+  var HOME = '/';
+  var leftForDialer = false, cancelled = false;
+
+  ['pointerdown', 'keydown'].forEach(function (evt) {
+    document.addEventListener(evt, function () { cancelled = true; }, { once: true });
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) { leftForDialer = true; return; }
+    if (leftForDialer && !cancelled) {
+      // Call is over and they are looking at this page again.
+      if (note) note.textContent = 'Taking you to the site…';
+      setTimeout(function () { if (!cancelled) window.location.replace(HOME); }, 900);
+    }
+  });
+
+  setTimeout(function () {
+    if (leftForDialer || cancelled || document.hidden) return;
+    // Still sitting here — they declined the call or the browser blocked it.
+    if (note) note.textContent = 'No problem. Taking you to the site…';
+    setTimeout(function () { if (!cancelled) window.location.replace(HOME); }, 1200);
+  }, 3200);
 })();
 </script>
 </body>
