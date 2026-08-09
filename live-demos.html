@@ -1435,9 +1435,10 @@
         Start with the live AI Intake Agent demo. Then look at the websites and brand builds behind it. The point is simple: cleaner first impressions, faster lead response, and less manual follow-up.
       </p>
 
-      <div class="hero-actions">
-        <a href="tel:+12166161364" class="btn-primary">Call My AI</a>
+      <div class="hero-actions" id="vc2-demo-actions">
+        <a href="tel:+12166161364" class="btn-primary" data-demo-call>Call My AI</a>
       </div>
+      <p id="vc2-demo-hint" style="color:var(--muted);font-size:0.8rem;margin-top:0.6rem;opacity:0.75;"></p>
 
       <a href="https://buy.stripe.com/cNi3cw9Ztelj08Ngzr7wA00" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="text-align:center;display:block;max-width:560px;margin-top:0.75rem;">Buy Now</a>
 
@@ -1686,20 +1687,148 @@
     </a>
   </nav>
 
+  <!-- Vapi Web SDK — powers the desktop browser call. Loads async; page works without it.
+       Version PINNED and hash-verified: @latest would let any future release run on this
+       page, and an unverified CDN file means a jsDelivr compromise executes as us. If the
+       hash ever fails to match, the module simply never loads and the phone number stays
+       as the fallback — which is the correct way for this to break. -->
+  <link rel="modulepreload"
+        href="https://cdn.jsdelivr.net/npm/@vapi-ai/web@2.6.1/+esm"
+        integrity="sha384-04SuRfQXR6Su2Q3gAXmI17254yY9HBfIZHfKv5oDWyQAC6AMhXmiHyjnlOWuIo0F"
+        crossorigin="anonymous">
+  <script type="module">
+    import Vapi from 'https://cdn.jsdelivr.net/npm/@vapi-ai/web@2.6.1/+esm';
+    window.Vapi = Vapi;
+    window.dispatchEvent(new Event('vapi-ready'));
+  </script>
+
   <script>
-    // Auto-dial when arriving with ?call=1 (LinkedIn custom button, email signature).
-    // Chrome and Safari treat arrival from a clicked https link as a user gesture and
-    // allow a tel: handoff within ~1s. Desktop and any browser that blocks it just
-    // gets the normal page, so the Call buttons stay as the fallback.
-    // Plain /live-demos with no parameter behaves exactly as before.
-    (function () {
-      if (!/[?&]call=1(&|$)/.test(window.location.search)) return;
-      var isTouch = window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
-      if (!isTouch) return;
-      setTimeout(function () {
-        window.location.href = 'tel:+12166161364';
-      }, 400);
-    })();
+  /* ==========================================================================
+     VC2 — Device-aware demo handoff  (rebuilt 2026-08-09, per Deep Research #306)
+     --------------------------------------------------------------------------
+     WHAT CHANGED AND WHY:
+     The old version auto-fired a tel: handoff ~400ms after load on touch
+     devices. That was the wrong call. Browsers block URI navigation that
+     isn't tied to a synchronous user gesture, and when it DID fire the
+     visitor still landed on the same OS dialer confirmation a plain link
+     would have given them instantly — so they paid a page load to arrive at
+     identical friction. #275 separately found people reflexively cancel a
+     dialer switch they didn't ask for.
+
+     NOW:
+       MOBILE  -> a real tap on a real link. Never auto-fired.
+       DESKTOP -> a browser voice call over WebRTC. No phone needed, which
+                  matters because a tel: link is dead weight on desktop and
+                  that's where most LinkedIn profile views land.
+
+     DO NOT put WebRTC on mobile: iOS Safari suspends the audio context when
+     the user backgrounds the app and the call dies mid-conversation.
+     DO NOT call getUserMedia on page load — users reflex-click Block. The
+     mic prompt only ever fires from the button click below.
+     ========================================================================== */
+  (function () {
+    'use strict';
+
+    // Vapi PUBLIC key. Safe to expose — it is designed for client-side use.
+    // Never put the private key here. Get it from dashboard.vapi.ai -> API Keys.
+    var VAPI_PUBLIC_KEY = '';
+    var VAPI_ASSISTANT_ID = '136f6ce6-036e-4de6-9cd5-93d339df3a0a';
+    var PHONE = '+12166161364';
+
+    var actions = document.getElementById('vc2-demo-actions');
+    var hint    = document.getElementById('vc2-demo-hint');
+    if (!actions) return;
+
+    var isTouch = window.matchMedia &&
+                  window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+    // Which surface sent them (?source=linkedin_featured, proposal_pdf, etc).
+    // On a browser call this rides into the assistant so Riley knows the origin
+    // before the first word. A tel: handoff cannot carry it — the OS dialer
+    // strips everything but the digits.
+    var source = (new URLSearchParams(window.location.search).get('source') || 'direct')
+                   .replace(/[^a-z0-9_-]/gi, '').slice(0, 40);
+
+    /* ---------------- MOBILE: tap to dial, nothing automatic --------------- */
+    if (isTouch) {
+      if (hint) hint.textContent = 'Tap to call. It answers on the first ring.';
+      return;
+    }
+
+    /* ---------------- DESKTOP: browser call -------------------------------- */
+    if (!VAPI_PUBLIC_KEY) {
+      // Key not set yet — leave the phone number as the working fallback.
+      if (hint) hint.textContent = 'Or dial ' + PHONE.replace('+1', '') + ' from your phone.';
+      return;
+    }
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-primary';
+    btn.style.cssText = 'cursor:pointer;font:inherit;width:100%;';
+    btn.textContent = 'Talk to my AI right now';
+    actions.insertBefore(btn, actions.firstChild);
+
+    var tel = actions.querySelector('[data-demo-call]');
+    if (tel) tel.style.display = 'none';
+    if (hint) hint.textContent = 'Runs in your browser. We only ask for your mic so it can hear you.';
+
+    var vapi = null, live = false;
+
+    function say(msg) { if (hint) hint.textContent = msg; }
+
+    btn.addEventListener('click', function () {
+      if (live) { try { vapi.stop(); } catch (e) {} return; }
+
+      if (!window.Vapi) {
+        say('Still loading — give it a second, or dial ' + PHONE.replace('+1', '') + '.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Connecting…';
+      say('Your browser will ask for microphone access. That is what lets it hear you.');
+
+      try {
+        if (!vapi) {
+          vapi = new window.Vapi(VAPI_PUBLIC_KEY);
+
+          vapi.on('call-start', function () {
+            live = true;
+            btn.disabled = false;
+            btn.textContent = 'End call';
+            say('You are live. Say "demo" and pick a trade, or ask about Van Wayne.');
+          });
+
+          vapi.on('call-end', function () {
+            live = false;
+            btn.disabled = false;
+            btn.textContent = 'Talk to my AI right now';
+            say('Call ended. Start it again any time, or dial ' + PHONE.replace('+1', '') + '.');
+          });
+
+          vapi.on('error', function () {
+            live = false;
+            btn.disabled = false;
+            btn.textContent = 'Talk to my AI right now';
+            // Mic denial is the most common failure — send them to the phone.
+            say('Could not start the call. If your browser blocked the mic, dial ' +
+                PHONE.replace('+1', '') + ' instead.');
+            if (tel) tel.style.display = '';
+          });
+        }
+
+        vapi.start(VAPI_ASSISTANT_ID, {
+          variableValues: { source_attribution: source, channel: 'web' }
+        });
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = 'Talk to my AI right now';
+        say('Could not start the call. Dial ' + PHONE.replace('+1', '') + ' instead.');
+        if (tel) tel.style.display = '';
+      }
+    });
+  })();
   </script>
 </body>
 </html>
