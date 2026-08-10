@@ -42,10 +42,12 @@
   }
   p.sub{color:var(--muted); font-size:.95rem; margin-bottom:2rem}
   .btn{
-    display:block; width:100%; padding:1.1rem 1.5rem;
+    display:flex; align-items:center; justify-content:center; gap:.5rem;
+    width:100%; min-height:5.5rem; padding:1.25rem 1.5rem;
     background:var(--gold); color:#0a0a0c; text-decoration:none;
-    font-weight:600; font-size:1.1rem; border-radius:12px;
+    font-weight:600; font-size:1.45rem; border-radius:16px;
     border:0; cursor:pointer; font-family:inherit;
+    box-shadow:0 8px 30px rgba(201,168,76,.22);
   }
   .btn:active{transform:translateY(1px)}
   .num{
@@ -70,7 +72,7 @@
     <h1>Call My AI</h1>
     <p class="sub" id="sub">Ask it about me, or call in like a customer and let it book you.</p>
 
-    <a href="tel:+12166161364" class="btn" id="callBtn">Call now</a>
+    <a href="tel:+12166161364" class="btn" id="callBtn">📞 Tap to call</a>
     <a href="tel:+12166161364" class="num">(216) 616-1364</a>
 
     <p class="note" id="note"></p>
@@ -80,20 +82,23 @@
 <script>
 /* --------------------------------------------------------------------------
    /call — the short link. Say it out loud, put it on a card.
-   Deliberately its own tiny page rather than a redirect into /live-demos:
-   the handoff should happen on a page that has already finished loading, and
-   live-demos is a full sales page.
 
-   TOUCH  -> dials immediately on arrival. Wayne verified this fires on a real
-             phone. The OS still shows its own "Call this number?" confirm --
-             that is an iOS/Android anti-toll-fraud guarantee and no site can
-             remove it.
-   DESKTOP-> never auto-dials, because desktops cannot place calls. Shows the
-             number to read off instead. This is why testing on a laptop always
-             looks "broken" -- it is working as designed.
+   NO AUTO-DIAL. This was tried and it is strictly worse.
+
+   iOS answers a programmatic tel: navigation with a security warning reading
+   "This website has been blocked from automatically starting a call," with
+   Ignore / Allow Call. So auto-dialing costs an EXTRA tap AND brands the site
+   as something that tried to do it behind your back. Verified on a real
+   iPhone 2026-08-09. Deep Research #306 called this correctly.
+
+   A plain tap on the button below gets the ordinary "Call (216) 616-1364?"
+   confirm instead — one tap, no warning, no suspicion. That confirm itself is
+   an iOS/Android anti-toll-fraud guarantee and cannot be removed by any site.
+   One tap is the floor. Do not try to beat it again.
+
+   DESKTOP -> shows the number to read off, since desktops cannot place calls.
    -------------------------------------------------------------------------- */
 (function () {
-  var PHONE = '+12166161364';
   var isTouch = window.matchMedia &&
                 window.matchMedia('(hover: none) and (pointer: coarse)').matches;
   var note = document.getElementById('note');
@@ -106,47 +111,20 @@
     return;
   }
 
-  if (note) note.textContent = 'Connecting… if it does not start, tap Call now.';
-  setTimeout(function () { window.location.href = 'tel:' + PHONE; }, 350);
+  if (note) note.textContent = 'One tap. It answers on the first ring.';
 
-  /* ------------------------------------------------------------------------
-     Nobody should ever be stranded on this page. Two ways they end up back
-     here, and both should land on the site:
-
-       1. They hit Cancel on the OS dial prompt. The page never lost focus,
-          so we never see a visibilitychange -- we detect it by still being
-          visible after the dialer should have taken over.
-       2. They took the call and hung up. The page WAS hidden, then comes
-          back. That is the good ending, and per the original intent the
-          caller should finish the call already standing on Wayne's site.
-
-     The delay matters. Redirecting too fast would yank a slow phone away
-     mid-handoff, so we only act once the dialer has clearly had its chance.
-     Any tap on the page cancels the redirect -- if they are reading, leave
-     them alone.
-     ---------------------------------------------------------------------- */
-  var HOME = '/';
-  var leftForDialer = false, cancelled = false;
-
-  ['pointerdown', 'keydown'].forEach(function (evt) {
-    document.addEventListener(evt, function () { cancelled = true; }, { once: true });
-  });
+  /* When the call ends and they come back to this tab, move them onto the
+     site rather than leaving them on a page whose only job is already done.
+     Only fires if they actually left for the dialer — someone who never
+     called is reading, and gets left alone. */
+  var leftForDialer = false;
 
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) { leftForDialer = true; return; }
-    if (leftForDialer && !cancelled) {
-      // Call is over and they are looking at this page again.
-      if (note) note.textContent = 'Taking you to the site…';
-      setTimeout(function () { if (!cancelled) window.location.replace(HOME); }, 900);
-    }
+    if (!leftForDialer) return;
+    if (note) note.textContent = 'Taking you to the site…';
+    setTimeout(function () { window.location.replace('/'); }, 1200);
   });
-
-  setTimeout(function () {
-    if (leftForDialer || cancelled || document.hidden) return;
-    // Still sitting here — they declined the call or the browser blocked it.
-    if (note) note.textContent = 'No problem. Taking you to the site…';
-    setTimeout(function () { if (!cancelled) window.location.replace(HOME); }, 1200);
-  }, 3200);
 })();
 </script>
 </body>
