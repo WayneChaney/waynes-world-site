@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Miami CEC — Vanwayne Chaney</title>
+  <meta name="description" content="Connect with Vanwayne Chaney after the Miami University College of Engineering and Computing AI talk. Free resume review Tuesday before the career fair." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://vanwaynechaney.com/miami" />
+  <meta property="og:title" content="Miami CEC — Vanwayne Chaney" />
+  <meta property="og:description" content="Connect, book a free resume review, and hear the AI answer the recruiters are looking for." />
+  <meta property="og:image" content="https://vanwaynechaney.com/wayne-teaching-group.jpg" />
+  <meta name="robots" content="noindex" />
+  <link rel="canonical" href="https://vanwaynechaney.com/miami" />
+  <link rel="icon" type="image/png" href="./vc2_v_logo_transparent_tight.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --bg:#06101D; --bg-2:#0A1728; --bg-card:#0D1B2B;
+      --gold:#C9A84C; --gold-2:#E8C56A; --gold-dim:rgba(201,168,76,0.12);
+      --white:#F0EDE6; --muted:#93A0B3; --border:rgba(201,168,76,0.15);
+      --radius:12px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{
+      background:var(--bg); color:var(--white);
+      font-family:'DM Sans',sans-serif; font-size:16px; line-height:1.6;
+      overflow-x:hidden;
+      padding:calc(2rem + env(safe-area-inset-top)) 1.25rem calc(3rem + env(safe-area-inset-bottom));
+      display:flex; justify-content:center;
+    }
+    body::before{
+      content:''; position:fixed; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events:none; z-index:0; opacity:.4;
+    }
+    .wrap{position:relative; z-index:1; width:100%; max-width:480px}
+
+    .eyebrow{
+      font-family:'DM Mono',monospace; font-size:.7rem; letter-spacing:.18em;
+      text-transform:uppercase; color:var(--gold); margin-bottom:1.25rem; text-align:center;
+    }
+
+    .portrait{
+      width:150px; height:150px;
+      margin:0 auto 1.5rem; display:block;
+      border-radius:var(--radius); object-fit:cover; object-position:center 15%;
+      border:1px solid var(--border);
+    }
+
+    h1{
+      font-family:'Cormorant Garamond',serif; font-weight:600;
+      font-size:clamp(2rem,8vw,2.6rem); line-height:1.1; text-align:center;
+      letter-spacing:-.01em;
+    }
+    .sub{
+      text-align:center; color:var(--muted); font-size:.92rem;
+      margin-top:.6rem; margin-bottom:2.25rem;
+    }
+    .sub strong{color:var(--white); font-weight:500}
+
+    .card{
+      display:block; text-decoration:none; color:inherit;
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:var(--radius); padding:1.15rem 1.25rem; margin-bottom:.9rem;
+      transition:border-color .18s ease, transform .18s ease, background .18s ease;
+    }
+    .card:hover,.card:focus-visible{
+      border-color:var(--gold); background:var(--bg-2); transform:translateY(-2px); outline:none;
+    }
+    .card.primary{
+      background:linear-gradient(135deg,rgba(201,168,76,.14),rgba(201,168,76,.05));
+      border-color:rgba(201,168,76,.45);
+    }
+    .card-top{display:flex; align-items:center; justify-content:space-between; gap:1rem}
+    .card-title{font-size:1.02rem; font-weight:600; letter-spacing:-.01em}
+    .card-note{color:var(--muted); font-size:.84rem; margin-top:.3rem}
+    .arrow{color:var(--gold); font-size:1.1rem; flex-shrink:0}
+    .tag{
+      display:inline-block; font-family:'DM Mono',monospace; font-size:.62rem;
+      letter-spacing:.14em; text-transform:uppercase; color:var(--gold);
+      border:1px solid var(--border); border-radius:99px;
+      padding:.18rem .55rem; margin-bottom:.55rem;
+    }
+
+    .rule{
+      height:1px; background:var(--border);
+      margin:2.25rem 0 1.5rem;
+    }
+
+    .note{
+      color:var(--muted); font-size:.86rem; text-align:center; line-height:1.7;
+    }
+    .note strong{color:var(--white); font-weight:500}
+
+    footer{
+      margin-top:2.5rem; text-align:center;
+      font-family:'DM Mono',monospace; font-size:.66rem;
+      letter-spacing:.14em; text-transform:uppercase; color:var(--muted);
+    }
+    footer a{color:var(--muted); text-decoration:none}
+    footer a:hover{color:var(--gold)}
+
+    .callline{
+      text-align:center; color:var(--muted); font-size:.84rem;
+      margin-top:1.2rem;
+    }
+    .callline a{
+      color:var(--gold); text-decoration:none; border-bottom:1px solid var(--border);
+    }
+    .callline a:hover{border-color:var(--gold)}
+
+    @media (max-width:380px){
+      .portrait{width:130px;height:130px}
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+
+    <p class="eyebrow">Miami University &middot; CEC &middot; Sept 14</p>
+
+    <img class="portrait" src="./vanwayne-miami-portrait.jpg"
+         alt="Vanwayne Chaney, founder of VC2 AI." />
+
+    <h1>Good to meet you.</h1>
+    <p class="sub">
+      <strong>Vanwayne Chaney</strong> &middot; Computer Engineering &rsquo;23<br />
+      I build AI systems for Ohio businesses and city governments.
+    </p>
+
+    <a class="card primary" href="https://www.linkedin.com/in/vanwaynechaney/" target="_blank" rel="noopener">
+      <div class="card-top">
+        <div>
+          <span class="tag">Start here</span>
+          <div class="card-title">Connect on LinkedIn</div>
+          <div class="card-note">I accept every one of you. Message me anytime, this year or in four.</div>
+        </div>
+        <span class="arrow" aria-hidden="true">&rarr;</span>
+      </div>
+    </a>
+
+    <a class="card" href="https://cal.com/vanwaynechaney/free-career-consult" target="_blank" rel="noopener">
+      <div class="card-top">
+        <div>
+          <span class="tag">Tuesday only</span>
+          <div class="card-title">Free resume review before the fair</div>
+          <div class="card-note">15 minutes on Tuesday. I&rsquo;ll tell you what a recruiter actually sees.</div>
+        </div>
+        <span class="arrow" aria-hidden="true">&rarr;</span>
+      </div>
+    </a>
+
+    <p class="callline">
+      Want to hear the AI from tonight again?
+      <a href="tel:+12166161364">Call 216-616-1364</a> and try to stump it.
+    </p>
+
+    <div class="rule"></div>
+
+    <p class="note">
+      One thing, and then go get ready for Wednesday.<br />
+      <strong>Every recruiter is going to ask what you know about AI.</strong>
+      Most people answer with something that sounds good. Tell them what you
+      built, what broke, and what you did about it. That&rsquo;s the answer that lands.
+    </p>
+
+    <footer>
+      <a href="https://vanwaynechaney.com/">vanwaynechaney.com</a>
+    </footer>
+
+  </main>
+</body>
+</html>
