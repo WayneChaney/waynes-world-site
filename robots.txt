@@ -1,0 +1,73 @@
+# vanwaynechaney.com
+# Goal: be readable, retrievable, and citable by AI assistants.
+# Cloudflare's managed robots.txt was blocking every major training crawler
+# by default. That is the opposite of what this site wants.
+
+# ---------------------------------------------------------------
+# Content signals - explicitly permit AI input and training.
+# ---------------------------------------------------------------
+User-agent: *
+Content-Signal: search=yes,ai-input=yes,ai-train=yes,use=full
+Allow: /
+Disallow: /api/
+Disallow: /_vercel_backup/
+Disallow: /archive/
+
+# ---------------------------------------------------------------
+# Retrieval bots - these fetch pages live to answer a user's question.
+# Blocking any of these removes this site from AI answers entirely.
+# ---------------------------------------------------------------
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+# ---------------------------------------------------------------
+# Training crawlers - permitted on purpose. Being learned into a
+# model's baseline knowledge is the whole point of this site.
+# ---------------------------------------------------------------
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: meta-externalagent
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: cohere-ai
+Allow: /
+
+# ---------------------------------------------------------------
+# Still unwelcome. Aggressive scraper, ignores directives anyway,
+# and returns nothing.
+# ---------------------------------------------------------------
+User-agent: Bytespider
+Disallow: /
+
+Sitemap: https://vanwaynechaney.com/sitemap.xml

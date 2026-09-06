@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Missed Call Calculator</title>
+  <meta name="description" content="See what missed calls cost your business every month. Free, works offline, nothing leaves your phone.">
+
+  <!-- SECURITY: everything runs locally. connect-src 'none' means this page
+       physically cannot send your numbers anywhere, even if it wanted to. -->
+  <!-- frame-ancestors is intentionally NOT here: browsers ignore it in a meta tag.
+       It ships as a real header from /_headers instead. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#08111d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Missed Calls">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <style>
+    :root {
+      --bg: #08111d;
+      --panel: #101b2b;
+      --panel-2: #162338;
+      --line: #27405d;
+      --text: #eef4ff;
+      --muted: #99acc6;
+      --accent: #4ec2ff;
+      --accent-2: #7af0c8;
+      --warn: #ffd166;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(78,194,255,0.12), transparent 28%),
+        linear-gradient(180deg, #08111d 0%, #0b1422 100%);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+      line-height: 1.05;
+    }
+    .sub {
+      margin: 0 0 28px;
+      color: var(--muted);
+      max-width: 760px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
+    }
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    }
+    .panel h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+    }
+    .fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+    input, select {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 12px 12px;
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(78,194,255,0.15);
+    }
+    .full { grid-column: 1 / -1; }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .kpi {
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--line);
+    }
+    .kpi .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .kpi .value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .kpi.accent .value { color: var(--accent); }
+    .kpi.good .value { color: var(--accent-2); }
+    .mini {
+      display: grid;
+      gap: 10px;
+    }
+    .mini-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(153,172,198,0.12);
+    }
+    .mini-row span:first-child { color: var(--muted); }
+    .callout {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(122,240,200,0.35);
+      background: rgba(122,240,200,0.08);
+      color: #dffcef;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .script {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,209,102,0.25);
+      background: rgba(255,209,102,0.07);
+    }
+    .script strong {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--warn);
+    }
+    .foot {
+      margin-top: 22px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .fields, .kpis { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>What are missed calls costing you?</h1>
+    <p class="sub">Put in your real numbers and find out. Everything runs on your phone, nothing gets sent anywhere, and there's no signup. Estimates only, not a guarantee.</p>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Inputs</h2>
+        <div class="fields">
+          <div>
+            <label for="vertical">Vertical</label>
+            <select id="vertical">
+              <option value="trades">Trades / Service Business</option>
+              <option value="wholesaling">Wholesaling</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+          <div>
+            <label for="monthlyLeads">Monthly Inbound Leads</label>
+            <input id="monthlyLeads" type="number" min="0" value="120">
+          </div>
+          <div>
+            <label for="missedRate">Missed or Unworked Rate %</label>
+            <input id="missedRate" type="number" min="0" max="100" value="25">
+          </div>
+          <div>
+            <label for="closeRate">Close Rate %</label>
+            <input id="closeRate" type="number" min="0" max="100" value="30">
+          </div>
+          <div>
+            <label for="dealValue">Average Deal / Job Profit / Value</label>
+            <input id="dealValue" type="number" min="0" value="900">
+          </div>
+          <div>
+            <label for="discountRate">Conservative Recovery Discount %</label>
+            <input id="discountRate" type="number" min="0" max="100" value="50">
+          </div>
+          <div>
+            <label for="manualHours">Manual Follow-up Hours / Week</label>
+            <input id="manualHours" type="number" min="0" step="0.5" value="6">
+          </div>
+          <div>
+            <label for="hourlyCost">Admin Hourly Cost</label>
+            <input id="hourlyCost" type="number" min="0" value="25">
+          </div>
+          <div class="full">
+            <label for="monthlyFee">Monthly cost of an answering service</label>
+            <input id="monthlyFee" type="number" min="0" value="297">
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Results</h2>
+        <div class="kpis">
+          <div class="kpi accent">
+            <div class="label">Gross Pipeline At Risk</div>
+            <div class="value" id="grossRisk">$0</div>
+          </div>
+          <div class="kpi accent">
+            <div class="label">Conservative Recovered Value / Month</div>
+            <div class="value" id="monthlyRecovery">$0</div>
+          </div>
+          <div class="kpi">
+            <div class="label">Monthly Admin Cost</div>
+            <div class="value" id="adminCost">$0</div>
+          </div>
+          <div class="kpi good">
+            <div class="label">VC2 Fee as % of Drag</div>
+            <div class="value" id="feePct">0%</div>
+          </div>
+        </div>
+
+        <div class="mini">
+          <div class="mini-row"><span>Missed / Unworked Leads</span><strong id="missedLeads">0</strong></div>
+          <div class="mini-row"><span>Conservative Recovered Value / Year</span><strong id="annualRecovery">$0</strong></div>
+          <div class="mini-row"><span>Discounted Recovery Assumption</span><strong id="discountShown">0%</strong></div>
+          <div class="mini-row"><span>Total Monthly Drag</span><strong id="totalDrag">$0</strong></div>
+          <div class="mini-row"><span>Jobs per month needed to cover it</span><strong id="paybackDeals">0</strong></div>
+        </div>
+
+        <div class="callout" id="callout"></div>
+
+        <div class="foot">
+          This is not a promise of recovered revenue. It is a way to price the seriousness of the leak using conservative assumptions.
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const fields = {
+      vertical: document.getElementById("vertical"),
+      monthlyLeads: document.getElementById("monthlyLeads"),
+      missedRate: document.getElementById("missedRate"),
+      closeRate: document.getElementById("closeRate"),
+      dealValue: document.getElementById("dealValue"),
+      discountRate: document.getElementById("discountRate"),
+      manualHours: document.getElementById("manualHours"),
+      hourlyCost: document.getElementById("hourlyCost"),
+      monthlyFee: document.getElementById("monthlyFee")
+    };
+
+    const outputs = {
+      grossRisk: document.getElementById("grossRisk"),
+      monthlyRecovery: document.getElementById("monthlyRecovery"),
+      annualRecovery: document.getElementById("annualRecovery"),
+      adminCost: document.getElementById("adminCost"),
+      feePct: document.getElementById("feePct"),
+      missedLeads: document.getElementById("missedLeads"),
+      discountShown: document.getElementById("discountShown"),
+      totalDrag: document.getElementById("totalDrag"),
+      paybackDeals: document.getElementById("paybackDeals"),
+      callout: document.getElementById("callout")
+    };
+
+    function formatMoney(value) {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0
+      }).format(value);
+    }
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: 1
+      }).format(value);
+    }
+
+    function applyDefaults() {
+      if (fields.vertical.value === "trades") {
+        fields.closeRate.value = 30;
+        fields.dealValue.value = 900;
+        fields.discountRate.value = 50;
+      } else if (fields.vertical.value === "wholesaling") {
+        fields.closeRate.value = 8;
+        fields.dealValue.value = 10000;
+        fields.discountRate.value = 50;
+      }
+      calculate();
+    }
+
+    function calculate() {
+      const monthlyLeads = Number(fields.monthlyLeads.value) || 0;
+      const missedRate = (Number(fields.missedRate.value) || 0) / 100;
+      const closeRate = (Number(fields.closeRate.value) || 0) / 100;
+      const dealValue = Number(fields.dealValue.value) || 0;
+      const discountRate = (Number(fields.discountRate.value) || 0) / 100;
+      const manualHours = Number(fields.manualHours.value) || 0;
+      const hourlyCost = Number(fields.hourlyCost.value) || 0;
+      const monthlyFee = Number(fields.monthlyFee.value) || 0;
+
+      const missedLeads = monthlyLeads * missedRate;
+      const grossRisk = missedLeads * closeRate * dealValue;
+      const monthlyRecovery = grossRisk * discountRate;
+      const annualRecovery = monthlyRecovery * 12;
+      const adminCost = manualHours * hourlyCost * 4.33;
+      const totalDrag = monthlyRecovery + adminCost;
+      const feePct = totalDrag > 0 ? (monthlyFee / totalDrag) * 100 : 0;
+      const paybackDeals = dealValue > 0 ? monthlyFee / dealValue : 0;
+
+      outputs.grossRisk.textContent = formatMoney(grossRisk);
+      outputs.monthlyRecovery.textContent = formatMoney(monthlyRecovery);
+      outputs.annualRecovery.textContent = formatMoney(annualRecovery);
+      outputs.adminCost.textContent = formatMoney(adminCost);
+      outputs.feePct.textContent = `${formatNumber(feePct)}%`;
+      outputs.missedLeads.textContent = formatNumber(missedLeads);
+      outputs.discountShown.textContent = `${formatNumber(discountRate * 100)}%`;
+      outputs.totalDrag.textContent = formatMoney(totalDrag);
+      outputs.paybackDeals.textContent = formatNumber(paybackDeals);
+
+      outputs.callout.textContent =
+        `If these assumptions are even close, the workflow has about ${formatMoney(grossRisk)} in gross pipeline at risk each month. After the built-in conservative discount, that still leaves roughly ${formatMoney(totalDrag)} in monthly drag. At that monthly cost, it would take about ${formatNumber(paybackDeals)} extra job(s) a month to break even.`;
+    }
+
+    Object.values(fields).forEach((field) => {
+      field.addEventListener("input", calculate);
+      field.addEventListener("change", calculate);
+    });
+
+    fields.vertical.addEventListener("change", applyDefaults);
+
+    calculate();
+  </script>
+
+  <style>
+    .cta{max-width:1100px;margin:28px auto 0;background:var(--panel);border:1px solid var(--line);
+      border-radius:14px;padding:26px 24px;text-align:center}
+    .cta h3{margin:0 0 8px;font-size:20px;color:#f4f7fb}
+    .cta p{margin:0 auto 18px;max-width:520px;font-size:14px;line-height:1.65;color:#9db0c8}
+    .cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .cta a{display:inline-block;text-decoration:none;border-radius:9px;font-weight:700;
+      font-size:14px;padding:13px 22px}
+    .cta a.primary{background:#2E7BFF;color:#fff}
+    .cta a.ghost{background:transparent;color:#9db0c8;border:1px solid var(--line)}
+    .cta .fine{margin-top:14px;font-size:12px;color:#6f8199}
+    .priv{max-width:1100px;margin:14px auto 40px;font-size:12px;color:#6f8199;text-align:center;line-height:1.6}
+    #pwa-bar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:9999;background:var(--panel);
+      border-top:1px solid var(--line);padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+      align-items:center;gap:12px}
+    #pwa-bar.show{display:flex}
+    body.pwa-bar-open{padding-bottom:110px}
+    #pwa-txt{flex:1;font-size:12.5px;color:#9db0c8;line-height:1.45}
+    #pwa-txt b{color:#f4f7fb;display:block;font-size:14px;margin-bottom:2px}
+    #pwa-bar button{background:#2E7BFF;color:#fff;border:none;border-radius:8px;font-size:13px;
+      font-weight:800;padding:11px 18px;cursor:pointer;font-family:inherit;white-space:nowrap}
+    #pwa-bar .pwa-x{background:transparent;color:#6f8199;padding:11px 4px;font-weight:600}
+    #pwa-modal{display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.9);
+      align-items:center;justify-content:center;padding:24px}
+    #pwa-modal.show{display:flex}
+    #pwa-modal .c{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+      padding:30px;max-width:430px;width:100%}
+    #pwa-modal h3{margin:0 0 8px;color:#f4f7fb;font-size:20px}
+    #pwa-modal ol{margin:0 0 20px;padding-left:20px;color:#9db0c8;font-size:13.5px;line-height:2}
+    #pwa-modal ol b{color:#f4f7fb}
+    #pwa-modal button{background:#2E7BFF;color:#fff;border:none;border-radius:8px;width:100%;
+      font-size:14px;font-weight:800;padding:13px;cursor:pointer;font-family:inherit}
+  </style>
+
+  <div class="cta">
+    <h3>Want to hear what picking up every call sounds like?</h3>
+    <p>Call the line below. An AI receptionist answers, asks what you need, and books it.
+      It's a live demo, not a recording. No sales pitch and nobody calls you back unless you ask.</p>
+    <div class="cta-btns">
+      <a class="primary" href="tel:+12166161364">Call the demo line</a>
+      <a class="ghost" href="https://vanwaynechaney.com/">Who built this</a>
+    </div>
+    <div class="fine">(216) 616-1364 &middot; Vanwayne Chaney &middot; Cleveland, Ohio</div>
+  </div>
+
+  <p class="priv">
+    Your numbers never leave this device. There is no account, no tracking, and no server to
+    send them to. Close the tab and they're gone.
+  </p>
+
+  <!-- install to home screen -->
+  <div id="pwa-bar">
+    <div id="pwa-txt"><b>Keep this on your phone</b>Opens like an app. Works with no signal.</div>
+    <button id="pwa-go">Install</button>
+    <button class="pwa-x" id="pwa-no">Not now</button>
+  </div>
+  <div id="pwa-modal">
+    <div class="c">
+      <h3>Add to your Home Screen</h3>
+      <ol>
+        <li>Tap the <b>Share</b> button at the bottom of Safari.</li>
+        <li>Scroll down, tap <b>Add to Home Screen</b>.</li>
+        <li>Tap <b>Add</b>, top right.</li>
+      </ol>
+      <button id="pwa-ok">Got it</button>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    'use strict';
+    var ua=navigator.userAgent||'';
+    var isIOS=/iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    var standalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+    // real iOS Safari has "Safari/" and no vendor-app marker
+    var inApp=isIOS&&(/FBAN|FBAV|Instagram|LinkedIn|Line|Twitter|Snapchat|MicroMessenger/i.test(ua)||!/Safari/.test(ua));
+    var bar=document.getElementById('pwa-bar'),txt=document.getElementById('pwa-txt'),
+        go=document.getElementById('pwa-go'),no=document.getElementById('pwa-no'),
+        modal=document.getElementById('pwa-modal');
+    function show(){ bar.classList.add('show'); document.body.classList.add('pwa-bar-open'); }
+    function hide(){ bar.classList.remove('show'); document.body.classList.remove('pwa-bar-open'); }
+    no.addEventListener('click',hide);
+    document.getElementById('pwa-ok').addEventListener('click',function(){modal.classList.remove('show');hide();});
+    if(standalone) return;
+    var deferred=null;
+    window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferred=e;show();});
+    window.addEventListener('appinstalled',function(){hide();deferred=null;});
+    if(isIOS){
+      if(inApp){
+        txt.innerHTML='<b>Open this in Safari first</b>Tap the ⋯ menu, then <b>Open in Browser</b>.';
+        go.style.display='none';
+      }
+      setTimeout(show,3000);
+    }
+    go.addEventListener('click',function(){
+      if(deferred){deferred.prompt();deferred.userChoice.then(function(){deferred=null;hide();});return;}
+      modal.classList.add('show');
+    });
+  })();
+  (function(){
+    'use strict';
+    if(!('serviceWorker' in navigator)) return;
+    if(location.protocol==='file:') return;
+    // first clients.claim() is an install, not an update - do not reload there
+    var had=!!navigator.serviceWorker.controller;
+    window.addEventListener('load',function(){
+      navigator.serviceWorker.register('./sw.js').then(function(reg){
+        function promote(w){ if(!w) return;
+          w.addEventListener('statechange',function(){
+            if(w.state==='installed'&&navigator.serviceWorker.controller) w.postMessage('SKIP_WAITING');
+          });
+        }
+        if(reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+        promote(reg.installing);
+        reg.addEventListener('updatefound',function(){promote(reg.installing);});
+        var done=false;
+        navigator.serviceWorker.addEventListener('controllerchange',function(){
+          if(!had||done) return; done=true; window.location.reload();
+        });
+      }).catch(function(e){console.warn('[sw]',e);});
+    });
+  })();
+  </script>
+</body>
+</html>
